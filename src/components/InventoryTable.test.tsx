@@ -76,4 +76,22 @@ describe('InventoryTable', () => {
     render(<InventoryTable {...defaultProps} />);
     expect(screen.getByText('$25,000')).toBeInTheDocument();
   });
+
+  it('shows action button only for aging vehicles', () => {
+    const onRecordAction = vi.fn();
+    render(<InventoryTable {...defaultProps} onRecordAction={onRecordAction} />);
+    // aging vehicles (Honda Civic id=2, Ford F-150 id=3) should have action buttons
+    const actionButtons = screen.getAllByRole('button', { name: /Record action for/ });
+    expect(actionButtons).toHaveLength(2);
+    expect(screen.getByLabelText('Record action for Honda Civic')).toBeInTheDocument();
+    expect(screen.getByLabelText('Record action for Ford F-150')).toBeInTheDocument();
+    // non-aging vehicle (Toyota Camry) should NOT have an action button
+    expect(screen.queryByLabelText('Record action for Toyota Camry')).not.toBeInTheDocument();
+  });
+
+  it('highlights aging vehicle rows', () => {
+    render(<InventoryTable {...defaultProps} />);
+    const agingRow = screen.getByTestId('vehicle-row-2');
+    expect(agingRow.className).toContain('bg-amber-50');
+  });
 });

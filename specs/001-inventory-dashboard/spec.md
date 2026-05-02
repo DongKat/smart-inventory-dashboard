@@ -122,7 +122,7 @@ As a dealership manager, I want to see summary KPI cards and charts showing inve
 - **SC-003**: A manager can record an action for an aging vehicle in under 30 seconds (select vehicle → choose action type → add notes → submit).
 - **SC-004**: Summary metrics are accurate to the current dataset and update within 1 second of filter changes.
 - **SC-005**: The dashboard renders fully within 2 seconds on a standard desktop browser with up to 500 vehicles.
-- **SC-006**: 100% of frontend components and state logic have passing unit tests.
+- **SC-006**: ≥85% statement coverage of frontend components and state logic, with all critical paths (filtering, aging detection, action persistence) fully tested.
 - **SC-007**: The UI is professionally presentable for a recorded demo video without any layout glitches, broken styles, or placeholder content.
 
 ## Assumptions

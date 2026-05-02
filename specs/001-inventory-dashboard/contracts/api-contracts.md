@@ -117,11 +117,11 @@ All endpoints are intercepted by MSW in the browser. No actual server exists.
 
 Actions are NOT served by the mock API. They are managed entirely client-side:
 
-- **Write**: Actions are created in the Zustand `actionStore` and persisted to localStorage via Zustand `persist` middleware.
-- **Read**: Actions are loaded from localStorage on app initialization (hydration).
+- **Write**: Actions are created in the Zustand `actionStore` and persisted to localStorage via `actionService.ts` (a try/catch-guarded read/write wrapper).
+- **Read**: Actions are loaded from localStorage on app initialization via `actionStore.loadActions()`.
 - **No API endpoint** for actions — this is intentional for v1 (mocked frontend only).
 
-If a real backend were introduced, an `POST /api/vehicles/:id/actions` and `GET /api/vehicles/:id/actions` endpoint would be added, and the service layer would switch from localStorage to HTTP calls without changing component code.
+If a real backend were introduced, a `POST /api/vehicles/:id/actions` and `GET /api/vehicles/:id/actions` endpoint would be added, and the service layer would switch from localStorage to HTTP calls without changing component code.
 
 ---
 

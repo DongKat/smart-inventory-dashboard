@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import ActionDrawer from './ActionDrawer';
 import type { VehicleWithAge } from '@/types/vehicle';
 
@@ -39,10 +39,10 @@ describe('ActionDrawer', () => {
     expect(screen.getByText('Save Action')).toBeInTheDocument();
   });
 
-  it('shows validation error when no type selected', () => {
+  it('disables Save Action button when no action type is selected', () => {
     render(<ActionDrawer vehicle={mockVehicle} open={true} onClose={vi.fn()} onSubmit={vi.fn()} />);
-    fireEvent.click(screen.getByText('Save Action'));
-    expect(screen.getByText('Please select an action type')).toBeInTheDocument();
+    const saveButton = screen.getByText('Save Action');
+    expect(saveButton).toBeDisabled();
   });
 
   it('does not render when closed', () => {

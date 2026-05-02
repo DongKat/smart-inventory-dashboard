@@ -53,12 +53,11 @@ describe('metrics utilities', () => {
     it('places vehicles in correct buckets', () => {
       const buckets = computeAgeDistribution(vehicles);
       expect(buckets.find((b) => b.label === '0-30')!.count).toBe(1);
-      expect(buckets.find((b) => b.label === '91-120')!.count).toBe(1);
-      expect(buckets.find((b) => b.label === '180+')!.count).toBe(1);
+      expect(buckets.find((b) => b.label === '90+')!.count).toBe(2);
     });
 
-    it('returns all six buckets', () => {
-      expect(computeAgeDistribution([])).toHaveLength(6);
+    it('returns all four buckets', () => {
+      expect(computeAgeDistribution([])).toHaveLength(4);
     });
   });
 

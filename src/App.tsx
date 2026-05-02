@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useInventoryStore } from '@/stores/inventoryStore';
 import { useActionStore } from '@/stores/actionStore';
 import { applyAllFilters } from '@/utils/filters';
+import { Button } from '@/components/ui/button';
 import Header from '@/components/Header';
 import FilterBar from '@/components/FilterBar';
 import InventoryTable from '@/components/InventoryTable';
@@ -27,6 +28,8 @@ function App() {
     sortDirection,
     searchQuery,
     locationFilter,
+    makeFilter,
+    ageRange,
     agingOnly,
     currentPage,
     pageSize,
@@ -35,6 +38,8 @@ function App() {
     setSortField,
     setSearchQuery,
     setLocationFilter,
+    setMakeFilter,
+    setAgeRange,
     setAgingOnly,
     setCurrentPage,
   } = useInventoryStore();
@@ -51,8 +56,13 @@ function App() {
   }, [loadVehicles, loadLocations, loadActions]);
 
   const filteredVehicles = useMemo(
-    () => applyAllFilters(vehicles, searchQuery, locationFilter, agingOnly),
-    [vehicles, searchQuery, locationFilter, agingOnly],
+    () => applyAllFilters(vehicles, searchQuery, locationFilter, agingOnly, makeFilter, ageRange),
+    [vehicles, searchQuery, locationFilter, agingOnly, makeFilter, ageRange],
+  );
+
+  const uniqueMakes = useMemo(
+    () => [...new Set(vehicles.map((v) => v.make))].sort(),
+    [vehicles],
   );
 
   const actionsMap = useMemo(() => {
@@ -88,6 +98,8 @@ function App() {
   function handleClearFilters() {
     setSearchQuery('');
     setLocationFilter('');
+    setMakeFilter('');
+    setAgeRange('');
     setAgingOnly(false);
   }
 
@@ -96,7 +108,8 @@ function App() {
       <div className="min-h-screen bg-slate-50">
         <Header />
         <main className="mx-auto max-w-7xl px-6 py-16 text-center">
-          <p className="text-red-600">{error}</p>
+          <p className="mb-4 text-slate-600">Unable to load inventory data. Please try again.</p>
+          <Button onClick={() => loadVehicles()}>Retry</Button>
         </main>
       </div>
     );
@@ -117,6 +130,11 @@ function App() {
               <KpiCards kpis={kpis} />
             </section>
 
+            {/* Age Distribution Chart */}
+            <section aria-label="Inventory insights" className="mb-6">
+              <AgeDistributionChart data={ageDistribution} />
+            </section>
+
             {/* Filter Bar */}
             <section aria-label="Filters" className="mb-6">
               <FilterBar
@@ -124,9 +142,14 @@ function App() {
                 onSearchChange={setSearchQuery}
                 locationFilter={locationFilter}
                 onLocationChange={(val) => setLocationFilter(val === 'all' ? '' : val)}
+                makeFilter={makeFilter}
+                onMakeChange={setMakeFilter}
+                ageRange={ageRange}
+                onAgeRangeChange={setAgeRange}
                 agingOnly={agingOnly}
                 onAgingToggle={setAgingOnly}
                 locations={locations}
+                makes={uniqueMakes}
                 totalResults={filteredVehicles.length}
               />
             </section>
@@ -148,11 +171,6 @@ function App() {
                   actionsMap={actionsMap}
                 />
               )}
-            </section>
-
-            {/* Age Distribution Chart */}
-            <section aria-label="Inventory insights">
-              <AgeDistributionChart data={ageDistribution} />
             </section>
           </>
         )}

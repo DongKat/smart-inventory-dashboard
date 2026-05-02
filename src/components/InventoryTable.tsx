@@ -89,13 +89,22 @@ function InventoryTable({
   return (
     <div>
       <div className="overflow-x-auto rounded-lg border bg-white">
-        <table className="w-full text-sm" role="table">
+        <table className="w-full table-fixed text-sm" role="table">
+          <colgroup>
+            <col style={{ width: '24%' }} />
+            <col style={{ width: '8%' }} />
+            <col style={{ width: '12%' }} />
+            <col style={{ width: '14%' }} />
+            <col style={{ width: '14%' }} />
+            <col style={{ width: '10%' }} />
+            {onRecordAction && <col style={{ width: '18%' }} />}
+          </colgroup>
           <thead>
             <tr className="border-b bg-slate-50">
               {columns.map((col) => (
                 <th
                   key={col.field}
-                  className="cursor-pointer px-4 py-3 text-left font-medium text-slate-600 hover:text-slate-900 select-none"
+                  className="cursor-pointer px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 hover:text-slate-900 select-none"
                   onClick={() => onSort(col.field)}
                   aria-sort={sortField === col.field ? (sortDirection === 'asc' ? 'ascending' : 'descending') : 'none'}
                 >
@@ -103,7 +112,7 @@ function InventoryTable({
                   <SortIcon field={col.field} activeField={sortField} direction={sortDirection} />
                 </th>
               ))}
-              {onRecordAction && <th className="px-4 py-3 text-left font-medium text-slate-600">Actions</th>}
+              {onRecordAction && <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Actions</th>}
             </tr>
           </thead>
           <tbody>

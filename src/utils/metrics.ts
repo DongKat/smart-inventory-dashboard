@@ -44,18 +44,14 @@ export function computeAgeDistribution(vehicles: VehicleWithAge[]): AgeDistribut
     { label: '0-30', count: 0 },
     { label: '31-60', count: 0 },
     { label: '61-90', count: 0 },
-    { label: '91-120', count: 0 },
-    { label: '121-180', count: 0 },
-    { label: '180+', count: 0 },
+    { label: '90+', count: 0 },
   ];
 
   for (const v of vehicles) {
     if (v.daysInStock <= 30) buckets[0]!.count++;
     else if (v.daysInStock <= 60) buckets[1]!.count++;
     else if (v.daysInStock <= 90) buckets[2]!.count++;
-    else if (v.daysInStock <= 120) buckets[3]!.count++;
-    else if (v.daysInStock <= 180) buckets[4]!.count++;
-    else buckets[5]!.count++;
+    else buckets[3]!.count++;
   }
 
   return buckets;

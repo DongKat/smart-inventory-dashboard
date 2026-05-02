@@ -5,11 +5,11 @@ import Header from './Header';
 describe('Header', () => {
   it('renders dashboard title', () => {
     render(<Header />);
-    expect(screen.getByText('Smart Inventory Dashboard')).toBeInTheDocument();
+    expect(screen.getByText('AutoResell Pro')).toBeInTheDocument();
   });
 
-  it('shows demo mode indicator', () => {
+  it('shows branch indicator', () => {
     render(<Header />);
-    expect(screen.getByText('Demo Mode')).toBeInTheDocument();
+    expect(screen.getByText(/Main Branch/)).toBeInTheDocument();
   });
 });

@@ -9,10 +9,8 @@ interface AgeDistributionChartProps {
 const COLORS: Record<string, string> = {
   '0-30': '#3b82f6',
   '31-60': '#6366f1',
-  '61-90': '#8b5cf6',
-  '91-120': '#f59e0b',
-  '121-180': '#f97316',
-  '180+': '#ef4444',
+  '61-90': '#f59e0b',
+  '90+': '#ef4444',
 };
 
 function AgeDistributionChart({ data }: AgeDistributionChartProps) {
