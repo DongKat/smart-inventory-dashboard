@@ -18,9 +18,15 @@ function readFromStorage(): Action[] {
   }
 }
 
-function writeToStorage(actions: Action[]): void {
-  const data: StoredActions = { version: 1, actions };
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+function writeToStorage(actions: Action[]): boolean {
+  try {
+    const data: StoredActions = { version: 1, actions };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    return true;
+  } catch {
+    console.warn('Failed to write actions to localStorage. Storage may be full or unavailable.');
+    return false;
+  }
 }
 
 export function getActions(): Action[] {

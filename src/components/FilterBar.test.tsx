@@ -7,12 +7,17 @@ const defaultProps = {
   onSearchChange: vi.fn(),
   locationFilter: '',
   onLocationChange: vi.fn(),
+  makeFilter: '',
+  onMakeChange: vi.fn(),
+  ageRange: '' as const,
+  onAgeRangeChange: vi.fn(),
   agingOnly: false,
   onAgingToggle: vi.fn(),
   locations: [
     { id: 'main-lot', name: 'Main Lot' },
     { id: 'downtown', name: 'Downtown Branch' },
   ],
+  makes: ['Toyota', 'Honda', 'Ford'],
   totalResults: 42,
 };
 
@@ -59,5 +64,25 @@ describe('FilterBar', () => {
   it('does not show clear button when no filters active', () => {
     render(<FilterBar {...defaultProps} />);
     expect(screen.queryByLabelText('Clear all filters')).not.toBeInTheDocument();
+  });
+
+  it('renders make filter select', () => {
+    render(<FilterBar {...defaultProps} />);
+    expect(screen.getByLabelText('Filter by make')).toBeInTheDocument();
+  });
+
+  it('renders age range filter select', () => {
+    render(<FilterBar {...defaultProps} />);
+    expect(screen.getByLabelText('Filter by age range')).toBeInTheDocument();
+  });
+
+  it('shows clear button when make filter is active', () => {
+    render(<FilterBar {...defaultProps} makeFilter="Toyota" />);
+    expect(screen.getByLabelText('Clear all filters')).toBeInTheDocument();
+  });
+
+  it('shows clear button when age range filter is active', () => {
+    render(<FilterBar {...defaultProps} ageRange="0-30" />);
+    expect(screen.getByLabelText('Clear all filters')).toBeInTheDocument();
   });
 });

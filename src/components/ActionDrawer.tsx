@@ -101,7 +101,7 @@ function ActionDrawer({ vehicle, open, onClose, onSubmit }: ActionDrawerProps) {
             <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit">Save Action</Button>
+            <Button type="submit" disabled={!actionType}>Save Action</Button>
           </div>
         </form>
       </DialogContent>

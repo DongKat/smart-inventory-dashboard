@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { getActions, addAction, getActionsForVehicle } from './actionService';
 import type { Action } from '@/types/action';
 
@@ -43,5 +43,29 @@ describe('actionService', () => {
   it('handles corrupted localStorage gracefully', () => {
     localStorage.setItem('smart-inventory-actions', 'not json');
     expect(getActions()).toEqual([]);
+  });
+
+  it('handles localStorage write failure gracefully', () => {
+    const spy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('QuotaExceededError');
+    });
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    // Should not throw
+    expect(() => addAction(makeAction())).not.toThrow();
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('Failed to write'));
+
+    spy.mockRestore();
+    warnSpy.mockRestore();
+  });
+
+  it('handles localStorage completely unavailable', () => {
+    const spy = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      throw new Error('SecurityError');
+    });
+
+    expect(getActions()).toEqual([]);
+
+    spy.mockRestore();
   });
 });

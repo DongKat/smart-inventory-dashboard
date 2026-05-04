@@ -5,6 +5,7 @@ import { computeDaysInStock, isAgingVehicle } from '@/utils/aging';
 
 export type SortField = 'make' | 'year' | 'price' | 'daysInStock' | 'location' | 'status';
 export type SortDirection = 'asc' | 'desc';
+export type AgeRange = '' | '0-30' | '31-60' | '61-90' | '91-180' | '180+';
 
 interface InventoryState {
   vehicles: VehicleWithAge[];
@@ -15,6 +16,8 @@ interface InventoryState {
   sortDirection: SortDirection;
   searchQuery: string;
   locationFilter: string;
+  makeFilter: string;
+  ageRange: AgeRange;
   agingOnly: boolean;
   currentPage: number;
   pageSize: number;
@@ -23,6 +26,8 @@ interface InventoryState {
   setSortField: (field: SortField) => void;
   setSearchQuery: (query: string) => void;
   setLocationFilter: (location: string) => void;
+  setMakeFilter: (make: string) => void;
+  setAgeRange: (range: AgeRange) => void;
   setAgingOnly: (aging: boolean) => void;
   setCurrentPage: (page: number) => void;
 }
@@ -41,6 +46,8 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
   sortDirection: 'desc',
   searchQuery: '',
   locationFilter: '',
+  makeFilter: '',
+  ageRange: '',
   agingOnly: false,
   currentPage: 1,
   pageSize: 25,
@@ -76,6 +83,8 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
 
   setSearchQuery: (searchQuery) => set({ searchQuery, currentPage: 1 }),
   setLocationFilter: (locationFilter) => set({ locationFilter, currentPage: 1 }),
+  setMakeFilter: (makeFilter) => set({ makeFilter, currentPage: 1 }),
+  setAgeRange: (ageRange) => set({ ageRange, currentPage: 1 }),
   setAgingOnly: (agingOnly) => set({ agingOnly, currentPage: 1 }),
   setCurrentPage: (currentPage) => set({ currentPage }),
 }));

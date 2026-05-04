@@ -34,7 +34,7 @@ class ErrorBoundary extends Component<Props, State> {
         <div className="flex min-h-[400px] flex-col items-center justify-center rounded-lg border bg-white p-8" role="alert">
           <h2 className="mb-2 text-lg font-semibold text-slate-900">Something went wrong</h2>
           <p className="mb-4 text-sm text-slate-500">
-            {this.state.error?.message ?? 'An unexpected error occurred.'}
+            An unexpected error occurred. Please try again or refresh the page.
           </p>
           <Button onClick={this.handleRetry}>Try Again</Button>
         </div>

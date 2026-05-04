@@ -84,20 +84,6 @@
     "exteriorColor": "Pearl White"
   },
   {
-    "id": "d0a23d4b-21ec-4952-b20f-b845fa1969e7",
-    "vin": "8747H7AXWA6MZ772N",
-    "make": "BMW",
-    "model": "X3",
-    "year": 2020,
-    "trim": "Luxury",
-    "price": 62817,
-    "location": "westside",
-    "dateAcquired": "2026-04-28",
-    "status": "sold",
-    "mileage": 78765,
-    "exteriorColor": "Burgundy"
-  },
-  {
     "id": "09f48e77-d8b3-47c9-9b12-e297f7294ffc",
     "vin": "C2R3KYR6EPL4EZ8CR",
     "make": "Honda",
@@ -322,20 +308,6 @@
     "exteriorColor": "Burgundy"
   },
   {
-    "id": "d2b32d3d-27cd-4c4c-a4f1-1a2665554919",
-    "vin": "LVMXLPW99ABEAXX3E",
-    "make": "Kia",
-    "model": "Telluride",
-    "year": 2021,
-    "trim": "SE",
-    "price": 45253,
-    "location": "airport",
-    "dateAcquired": "2026-03-07",
-    "status": "sold",
-    "mileage": 5009,
-    "exteriorColor": "Red"
-  },
-  {
     "id": "1437c7e8-84f9-4556-bf16-c1d5ffb62453",
     "vin": "3HGEV5571G4FY9MT1",
     "make": "Subaru",
@@ -490,20 +462,6 @@
     "exteriorColor": "Midnight Blue"
   },
   {
-    "id": "8e60987c-f9c4-4ca6-87cc-a2e304b1a7e7",
-    "vin": "FNHVV37GYRXEGJWRX",
-    "make": "Subaru",
-    "model": "Impreza",
-    "year": 2023,
-    "trim": "Sport",
-    "price": 44002,
-    "location": "airport",
-    "dateAcquired": "2026-03-18",
-    "status": "sold",
-    "mileage": 22517,
-    "exteriorColor": "Midnight Blue"
-  },
-  {
     "id": "48e237b0-35bc-4081-8989-eadc6cc8b430",
     "vin": "XFDLNZLVKUXC4EARB",
     "make": "BMW",
@@ -515,20 +473,6 @@
     "dateAcquired": "2026-03-02",
     "status": "available",
     "mileage": 13687,
-    "exteriorColor": "Green"
-  },
-  {
-    "id": "703fd10c-9fe7-4aef-9c07-1db3334a0075",
-    "vin": "8CTF9PDM01XXZT2DP",
-    "make": "Jeep",
-    "model": "Grand Cherokee",
-    "year": 2021,
-    "trim": "LE",
-    "price": 27371,
-    "location": "downtown",
-    "dateAcquired": "2025-12-19",
-    "status": "sold",
-    "mileage": 60304,
     "exteriorColor": "Green"
   },
   {
@@ -798,20 +742,6 @@
     "exteriorColor": "Midnight Blue"
   },
   {
-    "id": "01e6fc3d-10c7-4287-8433-2f8bcdceeadc",
-    "vin": "G7VT01GEP2L2PR5CY",
-    "make": "Ram",
-    "model": "2500",
-    "year": 2024,
-    "trim": "Base",
-    "price": 45601,
-    "location": "downtown",
-    "dateAcquired": "2026-01-21",
-    "status": "sold",
-    "mileage": 54146,
-    "exteriorColor": "Pearl White"
-  },
-  {
     "id": "46c4cbc7-989b-43a2-a55d-3040a34740a7",
     "vin": "Z72XPSW6PNVS9PZHD",
     "make": "Subaru",
@@ -824,34 +754,6 @@
     "status": "available",
     "mileage": 21608,
     "exteriorColor": "Burgundy"
-  },
-  {
-    "id": "aa9c65a2-7711-47dd-9dd6-89ef00e13855",
-    "vin": "T77048CC8TEZ02MLT",
-    "make": "BMW",
-    "model": "X5",
-    "year": 2022,
-    "trim": "LE",
-    "price": 51073,
-    "location": "airport",
-    "dateAcquired": "2026-03-19",
-    "status": "sold",
-    "mileage": 7624,
-    "exteriorColor": "Green"
-  },
-  {
-    "id": "4a9ed9f9-9bd5-4187-a842-16d0056c09ca",
-    "vin": "23PT5W0X6CGSZB2S8",
-    "make": "Mercedes-Benz",
-    "model": "GLC",
-    "year": 2024,
-    "trim": "Premium",
-    "price": 46064,
-    "location": "main-lot",
-    "dateAcquired": "2026-04-07",
-    "status": "sold",
-    "mileage": 1102,
-    "exteriorColor": "Blue"
   },
   {
     "id": "64d53085-69bf-45d1-ab48-c9598873ca77",
@@ -1090,20 +992,6 @@
     "status": "available",
     "mileage": 27243,
     "exteriorColor": "Gray"
-  },
-  {
-    "id": "fda69be1-d59c-48d1-b106-63a2cb5011be",
-    "vin": "CEF1S6CD7RC65RCJR",
-    "make": "Hyundai",
-    "model": "Kona",
-    "year": 2025,
-    "trim": "SE",
-    "price": 55319,
-    "location": "westside",
-    "dateAcquired": "2026-01-31",
-    "status": "sold",
-    "mileage": 16602,
-    "exteriorColor": "Pearl White"
   },
   {
     "id": "164b3266-c1d6-45a2-ac2a-7399c33110ba",
@@ -1594,20 +1482,6 @@
     "status": "available",
     "mileage": 41408,
     "exteriorColor": "Gray"
-  },
-  {
-    "id": "a20b050b-bc86-4b32-bdfc-281b059347a0",
-    "vin": "1JSG225HXYCKNAJCB",
-    "make": "Honda",
-    "model": "Pilot",
-    "year": 2023,
-    "trim": "LE",
-    "price": 45135,
-    "location": "westside",
-    "dateAcquired": "2026-02-01",
-    "status": "sold",
-    "mileage": 80918,
-    "exteriorColor": "Blue"
   },
   {
     "id": "7648682d-cc89-45d3-87aa-5ecb48229e56",

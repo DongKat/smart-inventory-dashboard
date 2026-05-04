@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import type { Location } from '@/types/vehicle';
+import type { AgeRange } from '@/stores/inventoryStore';
 import { Search, X } from 'lucide-react';
 
 interface FilterBarProps {
@@ -15,27 +16,47 @@ interface FilterBarProps {
   onSearchChange: (query: string) => void;
   locationFilter: string;
   onLocationChange: (location: string) => void;
+  makeFilter: string;
+  onMakeChange: (make: string) => void;
+  ageRange: AgeRange;
+  onAgeRangeChange: (range: AgeRange) => void;
   agingOnly: boolean;
   onAgingToggle: (aging: boolean) => void;
   locations: Location[];
+  makes: string[];
   totalResults: number;
 }
+
+const AGE_RANGES: { value: AgeRange; label: string }[] = [
+  { value: '0-30', label: '0–30 days' },
+  { value: '31-60', label: '31–60 days' },
+  { value: '61-90', label: '61–90 days' },
+  { value: '91-180', label: '91–180 days' },
+  { value: '180+', label: '180+ days' },
+];
 
 function FilterBar({
   searchQuery,
   onSearchChange,
   locationFilter,
   onLocationChange,
+  makeFilter,
+  onMakeChange,
+  ageRange,
+  onAgeRangeChange,
   agingOnly,
   onAgingToggle,
   locations,
+  makes,
   totalResults,
 }: FilterBarProps) {
-  const hasActiveFilters = searchQuery || locationFilter || agingOnly;
+  const hasActiveFilters = searchQuery || locationFilter || makeFilter || ageRange || agingOnly;
 
   function clearAllFilters() {
     onSearchChange('');
     onLocationChange('');
+    onMakeChange('');
+    onAgeRangeChange('');
     onAgingToggle(false);
   }
 
@@ -52,8 +73,22 @@ function FilterBar({
         />
       </div>
 
-      <Select value={locationFilter} onValueChange={onLocationChange}>
-        <SelectTrigger className="w-[180px]" aria-label="Filter by location">
+      <Select value={makeFilter || 'all'} onValueChange={(val) => onMakeChange(val === 'all' ? '' : val)}>
+        <SelectTrigger className="w-[150px]" aria-label="Filter by make">
+          <SelectValue placeholder="All Makes" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All Makes</SelectItem>
+          {makes.map((make) => (
+            <SelectItem key={make} value={make}>
+              {make}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      <Select value={locationFilter || 'all'} onValueChange={onLocationChange}>
+        <SelectTrigger className="w-[160px]" aria-label="Filter by location">
           <SelectValue placeholder="All Locations" />
         </SelectTrigger>
         <SelectContent>
@@ -61,6 +96,20 @@ function FilterBar({
           {locations.map((loc) => (
             <SelectItem key={loc.id} value={loc.id}>
               {loc.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      <Select value={ageRange || 'all'} onValueChange={(val) => onAgeRangeChange((val === 'all' ? '' : val) as AgeRange)}>
+        <SelectTrigger className="w-[150px]" aria-label="Filter by age range">
+          <SelectValue placeholder="All Ages" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All Ages</SelectItem>
+          {AGE_RANGES.map((r) => (
+            <SelectItem key={r.value} value={r.value}>
+              {r.label}
             </SelectItem>
           ))}
         </SelectContent>

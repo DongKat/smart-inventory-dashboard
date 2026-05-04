@@ -7,9 +7,7 @@ const mockData: AgeDistributionBucket[] = [
   { label: '0-30', count: 40 },
   { label: '31-60', count: 30 },
   { label: '61-90', count: 35 },
-  { label: '91-120', count: 20 },
-  { label: '121-180', count: 15 },
-  { label: '180+', count: 10 },
+  { label: '90+', count: 45 },
 ];
 
 describe('AgeDistributionChart', () => {
