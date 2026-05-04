@@ -1,390 +1,362 @@
-# System Design Document
+# System Design: Smart Inventory Dashboard
 
-## Scenario B: The Intelligent Inventory Dashboard
-
-**Domain:** Supply  
-**Objective:** Provide dealership managers with a real-time, filterable view of vehicle stock, automatically surface aging inventory (>90 days), and enable managers to log persistent actions for those vehicles.
+**Version**: 1.0  
+**Date**: 2026-05-04
 
 ---
 
-## Architecture Diagram
+## Table of Contents
+
+1. [Overview](#1-overview)
+2. [Architecture](#2-architecture)
+3. [Data Model](#3-data-model)
+4. [State Management](#4-state-management)
+5. [Data Flow](#5-data-flow)
+6. [API & Mocking Layer](#6-api--mocking-layer)
+7. [Persistence](#7-persistence)
+8. [Component Architecture](#8-component-architecture)
+9. [Key Design Decisions](#9-key-design-decisions)
+10. [Testing Strategy](#10-testing-strategy)
+
+---
+
+## 1. Overview
+
+Smart Inventory Dashboard is a **frontend-only single-page application** that gives dealership managers a real-time view of vehicle stock. There is no backend server — all data is served by MSW (Mock Service Worker) intercepting fetch requests in the browser, and manager actions are persisted to `localStorage`.
+
+### Primary User Goals
+
+| Goal | Mechanism |
+|---|---|
+| Browse and locate vehicles | Sortable, searchable, paginated inventory table |
+| Identify aging stock | Automatic severity classification at >90 days; visual badges and row highlights |
+| Act on aging vehicles | Slide-over action drawer; action log persisted to localStorage |
+| Assess lot health | KPI cards + age distribution chart derived from live filtered state |
+
+---
+
+## 2. Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                            Browser (SPA)                                 │
-│                                                                         │
-│  ┌──────────┐  ┌────────────┐  ┌────────────┐  ┌───────────────────┐  │
-│  │  React   │  │  Zustand   │  │  Services  │  │  MSW Intercept    │  │
-│  │  UI      │◄─┤  Stores    │◄─┤  Layer     │◄─┤  Layer            │  │
-│  │  Layer   │  │            │  │            │  │  (Mock API)       │  │
-│  └──────────┘  └────────────┘  └────────────┘  └───────────────────┘  │
-│       │                              │                    │             │
-│       │         ┌────────────┐       │         ┌─────────▼──────────┐  │
-│       │         │localStorage│◄──────┘         │  Mock Vehicle Data │  │
-│       │         │ (Actions)  │                 │  (150 vehicles)    │  │
-│       │         └────────────┘                 └────────────────────┘  │
-│       ▼                                                                 │
-│  ┌──────────────────────────────────────────────────────────────────┐  │
-│  │                      User Interface                               │  │
-│  │  ┌─────────┐ ┌──────────┐ ┌────────────┐ ┌───────────────────┐  │  │
-│  │  │KPI Cards│ │Filter Bar│ │Inventory   │ │Age Distribution   │  │  │
-│  │  │(4 metrics)│Search     │ │Table       │ │Chart (Recharts)   │  │  │
-│  │  └─────────┘ │Location   │ │Sortable    │ └───────────────────┘  │  │
-│  │               │Aging Only │ │Paginated   │                        │  │
-│  │               └──────────┘ │Highlighted │                        │  │
-│  │                            └────────────┘                        │  │
-│  └──────────────────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                        Browser                              │
+│                                                             │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │                   React SPA (Vite)                    │  │
+│  │                                                       │  │
+│  │  ┌─────────────┐   ┌──────────────────────────────┐  │  │
+│  │  │   Zustand   │   │       React Components        │  │  │
+│  │  │   Stores    │◄──│  (render + dispatch actions)  │  │  │
+│  │  └──────┬──────┘   └──────────────────────────────┘  │  │
+│  │         │                                             │  │
+│  │  ┌──────▼──────┐   ┌──────────────────────────────┐  │  │
+│  │  │  Services   │   │         Utils / Hooks         │  │  │
+│  │  │  (fetch)    │   │  (aging, filters, metrics)    │  │  │
+│  │  └──────┬──────┘   └──────────────────────────────┘  │  │
+│  └─────────┼──────────────────────────────────────────┘  │
+│            │ fetch()                                       │
+│  ┌─────────▼──────────────────────────────────────────┐  │
+│  │          MSW Service Worker                         │  │
+│  │   intercepts /api/* — returns static JSON + delay   │  │
+│  └─────────────────────────────────────────────────────┘  │
+│                                                             │
+│  localStorage ──► actionService ──► actionStore            │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Technology choices:**
+
+| Concern | Choice | Rationale |
+|---|---|---|
+| Framework | React 18 + TypeScript | Strong ecosystem, strict typing |
+| Build | Vite 6 | Fast HMR, native ESM |
+| Styling | Tailwind CSS 4 | Utility-first; no runtime overhead |
+| UI Primitives | Radix UI (unstyled) | Accessible, headless; styled with Tailwind |
+| Charts | Recharts | Composable, React-native chart library |
+| State | Zustand 5 | Minimal boilerplate; no context drilling |
+| API Mocking | MSW 2 | Intercepts at the network level; same handlers work in dev and tests |
+| Persistence | `localStorage` | Zero-dependency; sufficient for single-user action tracking |
+
+---
+
+## 3. Data Model
+
+### Vehicle
+
+Fetched from the mock API. Fields are stored as-is; derived fields are computed at enrichment time.
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | `string` (UUID) | Immutable primary key |
+| `vin` | `string` | 17-char alphanumeric |
+| `make` | `string` | e.g. `"Toyota"` |
+| `model` | `string` | e.g. `"Camry"` |
+| `year` | `number` | 4-digit model year |
+| `trim` | `string` | e.g. `"SE"`, `"Limited"` |
+| `price` | `number` | Listed price in USD |
+| `location` | `string` | References a `Location.id` |
+| `dateAcquired` | `string` (ISO 8601) | Date vehicle entered stock |
+| `status` | `"available" \| "reserved" \| "sold"` | Current vehicle state |
+| `mileage` | `number` | Odometer reading |
+| `exteriorColor` | `string` | — |
+
+**Derived (computed, not stored):**
+
+| Field | Formula |
+|---|---|
+| `daysInStock` | `⌊(now − dateAcquired) / 86_400_000⌋` |
+| `isAging` | `daysInStock > 90` |
+| `agingSeverity` | `"normal"` / `"warning"` (>90d) / `"critical"` (>180d) |
+
+### Action
+
+Persisted to `localStorage` under the key `inventory_actions`.
+
+| Field | Type | Notes |
+|---|---|---|
+| `id` | `string` (UUID) | Auto-generated at creation |
+| `vehicleId` | `string` | Foreign key → Vehicle.id |
+| `type` | `ActionType` | See enum below |
+| `notes` | `string` | Optional, ≤ 500 chars |
+| `createdAt` | `string` (ISO 8601) | Set automatically |
+| `managerName` | `string` | Defaults to `"Manager"` |
+
+```ts
+type ActionType =
+  | 'price_reduction'
+  | 'transfer'
+  | 'marketing_push'
+  | 'auction_candidate'
+  | 'hold'
+  | 'other';
+```
+
+### Location
+
+Static reference data returned by `GET /api/locations`.
+
+| id | name |
+|---|---|
+| `main-lot` | Main Lot |
+| `downtown` | Downtown Branch |
+| `westside` | Westside Annex |
+| `airport` | Airport Location |
+
+---
+
+## 4. State Management
+
+Two Zustand stores manage all global state. Neither store communicates with the other; both are consumed directly by components.
+
+### `inventoryStore`
+
+Owns all vehicle data and UI state for the inventory table.
+
+```
+vehicles[]         ← raw enriched VehicleWithAge array (from API)
+locations[]        ← Location array (from API)
+isLoading          ← fetch in flight
+error              ← fetch error message or null
+─── filter state ───────────────────────
+searchQuery        ← free-text search (make / model / VIN)
+locationFilter     ← Location.id or ""
+makeFilter         ← make string or ""
+ageRange           ← "" | "0-30" | "31-60" | "61-90" | "91-180" | "180+"
+agingOnly          ← boolean toggle
+─── sort state ─────────────────────────
+sortField          ← "make" | "year" | "price" | "daysInStock" | "location" | "status"
+sortDirection      ← "asc" | "desc"
+─── pagination ─────────────────────────
+currentPage        ← 1-indexed
+pageSize           ← 25 (fixed)
+```
+
+Filtering and sorting are computed **outside the store** in `utils/filters.ts` and `utils/metrics.ts`, keeping the store lean and the derivations independently testable.
+
+### `actionStore`
+
+Owns the manager action log. Reads from and writes to `localStorage` via `actionService`.
+
+```
+actions[]          ← all Action records loaded from localStorage
+loadActions()      ← hydrate from localStorage on mount
+addAction(action)  ← persist + append to in-memory array
+getActionsForVehicle(id) ← selector for per-vehicle history
 ```
 
 ---
 
-## Component Roles
+## 5. Data Flow
 
-### Presentation Layer
+### Initial Load
 
-| Component | Responsibility |
-|-----------|---------------|
-| **Header** | App branding, manager identity display |
-| **KpiCards** | Render 4 computed metrics (total, aging, avg days, value) |
-| **FilterBar** | Search input, location dropdown, aging toggle, clear filters |
-| **InventoryTable** | Sortable columns, pagination (25/page), row highlighting, action button |
-| **AgingBadge** | Visual severity indicator (Warning / Critical) |
-| **AgeDistributionChart** | Recharts BarChart with 6 age buckets, color-coded |
-| **ActionDrawer** | Modal dialog for recording actions (type + notes) |
-| **ActionHistory** | Chronological list of recorded actions for a vehicle |
-| **EmptyState** | User-friendly "no results" with clear-filters CTA |
-| **ErrorBoundary** | Graceful error recovery with retry |
-| **LoadingSkeleton** | Shimmer placeholder during data fetch |
+```
+App mounts
+  └─► inventoryStore.loadVehicles()
+        └─► vehicleService.fetchVehicles()
+              └─► fetch('/api/vehicles')  ──► MSW handler
+                    └─► vehicles[] returned, enriched with daysInStock / isAging
+  └─► inventoryStore.loadLocations()
+  └─► actionStore.loadActions()  ──► localStorage
+```
 
-### State Management Layer
+### Filter / Sort
 
-| Store | Responsibility |
-|-------|---------------|
-| **inventoryStore** | Vehicle list, loading/error states, filter/sort/pagination state, fetch triggers |
-| **actionStore** | Action list, add/get actions, synced with localStorage via service |
+```
+User interacts with FilterBar
+  └─► inventoryStore.setSearchQuery() / setLocationFilter() / etc.
+        └─► store state updated (synchronous)
+              └─► InventoryTable re-renders
+                    └─► applyFilters(vehicles, filters)  ← utils/filters.ts
+                          └─► applySort(filtered, sort)
+                                └─► usePagination(sorted, page, pageSize)
+                                      └─► slice rendered to table
+```
 
-### Service Layer
+### Record Action
 
-| Service | Responsibility |
-|---------|---------------|
-| **vehicleService** | HTTP client for `GET /api/vehicles` and `GET /api/locations` |
-| **actionService** | localStorage CRUD with versioned JSON schema, corruption recovery |
+```
+User clicks row → ActionDrawer opens
+  └─► user selects ActionType + optional notes → submits
+        └─► actionStore.addAction({ id: uuid(), vehicleId, type, notes, createdAt })
+              └─► actionService.addAction(action)  ──► localStorage.setItem(...)
+                    └─► store re-renders ActionHistory with new entry
+```
 
-### Utility Layer
+### KPI & Chart Updates
 
-| Utility | Responsibility |
-|---------|---------------|
-| **aging.ts** | `computeDaysInStock()`, `isAgingVehicle()` (>90d), `getAgingSeverity()` |
-| **filters.ts** | `filterBySearch()`, `filterByLocation()`, `filterByAgingStatus()`, `applyAllFilters()` |
-| **metrics.ts** | `computeKpis()`, `computeAgeDistribution()`, `computeLocationBreakdown()` |
+KPI cards and the age distribution chart derive their values from the **filtered** vehicle list, so they respond to filter changes without any additional wiring.
 
-### Mock API Layer (MSW)
-
-| Handler | Endpoint | Behavior |
-|---------|----------|----------|
-| GET /api/vehicles | Returns 150 vehicles | Simulated 200–500ms latency |
-| GET /api/vehicles/:id | Returns single vehicle | 404 if not found |
-| GET /api/locations | Returns 4 dealership locations | 100ms latency |
+```
+filteredVehicles (derived in component)
+  └─► computeMetrics(filteredVehicles)  ── utils/metrics.ts
+        └─► { total, agingCount, avgDaysInStock, totalValue }
+  └─► computeAgeDistribution(filteredVehicles)
+        └─► [{ bucket: "0-30", count }, ...]  ──► Recharts BarChart
+```
 
 ---
 
-## Data Flow
+## 6. API & Mocking Layer
 
-```
-1. App mounts → MSW service worker intercepts fetch calls
-2. inventoryStore.loadVehicles() → vehicleService.fetchVehicles()
-   → fetch('/api/vehicles') → MSW handler → returns mock JSON
-3. Raw vehicles enriched with computed fields (daysInStock, isAging)
-4. User interactions update store state (filters, sort, page)
-5. Filtered/sorted vehicles computed via useMemo selectors
-6. KPIs and chart data derived from filtered set (reactive)
-7. Action recording: ActionDrawer → actionStore.addAction()
-   → actionService.addAction() → localStorage.setItem()
-8. On next load: actionStore.loadActions() reads from localStorage
-```
+All network requests are intercepted by **MSW 2** via a registered service worker in development and a Node.js server in tests.
 
-**Key Design Principle:** Unidirectional data flow. UI dispatches actions to stores, stores update state, React re-renders derived views.
+### Endpoints
 
----
+| Method | Path | Response | Latency |
+|---|---|---|---|
+| `GET` | `/api/vehicles` | `{ vehicles: Vehicle[], total: number }` | 200–500 ms |
+| `GET` | `/api/vehicles/:id` | `Vehicle` or `404` | 100–300 ms |
+| `GET` | `/api/locations` | `{ locations: Location[] }` | ~100 ms |
 
-## Technology Choices & Justifications
+Latency is simulated with MSW's `delay()` to exercise loading states during development and demos.
 
-| Decision | Choice | Justification |
-|----------|--------|---------------|
-| **UI Framework** | React 18 | Industry standard, vast ecosystem, hooks for composition |
-| **Language** | TypeScript (strict) | Catch errors at compile time, self-documenting interfaces |
-| **Build Tool** | Vite 5 | Sub-second HMR, ESM-native, optimized production builds |
-| **Styling** | Tailwind CSS v4 | Utility-first reduces CSS bloat, design-system consistency |
-| **Components** | shadcn/ui + Radix | Accessible primitives (Dialog, Select) without heavy runtime |
-| **State** | Zustand 5 | Minimal boilerplate vs Redux, built-in selectors, tiny bundle (2KB) |
-| **Charts** | Recharts 3 | React-native, declarative, good TypeScript support |
-| **API Mocking** | MSW 2 | Network-level interception—same code works in browser/tests |
-| **Testing** | Vitest + RTL | Vite-native test runner (shared config), user-centric assertions |
-| **Persistence** | localStorage | Simple, synchronous, sufficient for client-side action log |
+### Error Simulation
 
-### Why Frontend-Only (Mock Backend)?
+The vehicle endpoint can be configured to return a `500` response to test the `ErrorBoundary` component. This is done by adding an override handler in tests rather than modifying the default handler.
 
-For this assessment, the frontend fully implements the user experience with MSW simulating a real REST API. This approach:
-- Demonstrates complete UI/UX for all three core requirements
-- Uses the same `fetch()` calls a real backend would consume
-- Is trivially replaceable—swap MSW handlers with real API endpoints
+### Seed Data
+
+`src/mocks/data/vehicles.json` contains ~150 vehicles across all four locations, spread across a date range that produces vehicles in every age bucket, ensuring all UI states are exercisable without manual setup.
 
 ---
 
-## Observability Strategy
+## 7. Persistence
 
-### Current Implementation (Frontend)
+Manager actions are the only data that must survive page refreshes. The persistence strategy uses `localStorage` directly because:
 
-| Concern | Approach |
-|---------|----------|
-| **Error Tracking** | ErrorBoundary catches React tree errors, logs to console; service layer logs fetch failures |
-| **State Debugging** | Zustand devtools-compatible; store state inspectable via React DevTools |
-| **Performance** | Vite dev server reports bundle sizes; `useMemo` prevents unnecessary re-renders |
-| **API Monitoring** | MSW logs unhandled requests; simulated latency exposes loading-state bugs |
+- The dataset is small (hundreds of records at most)
+- No multi-user synchronisation is required
+- No server is available
 
-### Production-Ready Extensions (Future)
+### Storage Schema
 
-| Concern | Recommended Tool | Integration Point |
-|---------|-----------------|-------------------|
-| **Error Monitoring** | Sentry | ErrorBoundary `componentDidCatch` → `Sentry.captureException()` |
-| **Analytics** | PostHog / Mixpanel | Track filter usage, action recordings, page views |
-| **Performance** | Web Vitals (LCP, FID, CLS) | `reportWebVitals()` in main.tsx |
-| **Logging** | Structured JSON logs | Service layer → centralized log collector |
-| **Tracing** | OpenTelemetry | Distributed tracing headers on fetch calls for backend correlation |
-| **Health Check** | `/health` endpoint | Backend liveness/readiness probes |
+```
+Key:   "inventory_actions"
+Value: JSON.stringify(Action[])
+```
+
+`actionService.ts` encapsulates all read/write logic. The service is the only caller of `localStorage`; components and the store never touch `localStorage` directly. This boundary makes the service trivially replaceable with a real API later.
+
+**Graceful degradation:** if `localStorage` is unavailable or the stored JSON is corrupt, `getActions()` returns `[]` and the app continues without crashing.
 
 ---
 
-## Scalability Considerations
+## 8. Component Architecture
 
-| Concern | Current Approach | Scalable Approach |
-|---------|-----------------|-------------------|
-| **Large datasets** | Client-side filtering of 150 vehicles | Server-side pagination, search API with query params |
-| **Concurrent users** | N/A (client-only) | Stateless API servers behind load balancer |
-| **Action persistence** | localStorage (per-browser) | REST API with PostgreSQL, optimistic UI updates |
-| **Real-time updates** | Manual refresh | WebSocket/SSE for inventory changes |
-| **Bundle size** | ~250KB gzipped | Code-splitting, lazy loading for chart/dialog |
+```
+App
+├── ErrorBoundary
+│   ├── Header
+│   ├── KpiCards            ← reads filteredVehicles
+│   ├── AgeDistributionChart ← reads filteredVehicles
+│   ├── FilterBar           ← writes to inventoryStore (filters)
+│   ├── InventoryTable      ← reads paged/sorted/filtered vehicles
+│   │   └── AgingBadge      ← pure display; receives daysInStock
+│   └── ActionDrawer        ← reads/writes actionStore
+│       └── ActionHistory   ← reads actionStore.getActionsForVehicle()
+└── LoadingSkeleton         ← shown while inventoryStore.isLoading
+```
+
+**Design principles applied:**
+
+- **Co-location**: every component has a `*.test.tsx` file in the same directory.
+- **Single responsibility**: utility functions (`aging.ts`, `filters.ts`, `metrics.ts`) are pure and have no React dependencies.
+- **Thin stores**: stores hold state and async triggers only; no business logic lives inside them.
+- **UI primitives isolated**: `src/components/ui/` contains only unstyled/minimally-styled wrappers around Radix primitives. Application logic lives in the feature components above.
 
 ---
 
-## Security Considerations
+## 9. Key Design Decisions
 
-| Concern | Implementation |
-|---------|---------------|
-| **XSS Prevention** | React auto-escapes JSX; no `dangerouslySetInnerHTML` |
-| **Input Validation** | Action form validates required fields before persistence |
-| **Dependency Safety** | No known vulnerabilities (`npm audit` clean) |
-| **Data Integrity** | localStorage reads wrapped in try/catch for corruption recovery |
-| **CORS** | MSW operates same-origin; production would enforce CORS headers |
+### Client-side filtering vs. server-side
+
+All filtering, sorting, and pagination happen in the browser after a single bulk fetch of the full vehicle list. This is appropriate here because:
+
+1. The dataset is bounded (~150 vehicles) and fits comfortably in memory.
+2. There is no real server to query.
+3. It avoids round-trip latency for each filter interaction.
+
+For a real dealership system with thousands of vehicles, server-side pagination and filtering would be required.
+
+### Derived fields computed at enrichment, not stored
+
+`daysInStock` and `isAging` are computed once when vehicles are loaded into the store and attached to each `VehicleWithAge` object. This avoids recomputing them on every render and keeps templates simple. The tradeoff is that a very long-lived session could show stale values; a real app would recompute on a daily timer or on each API refetch.
+
+### Zustand over Context API
+
+Zustand was chosen over React Context because:
+
+- No provider wrapping required.
+- Selective re-render: components subscribe only to the slices they use.
+- Simpler async action pattern than `useReducer` + `useContext`.
+
+### localStorage over IndexedDB
+
+For the action log, `localStorage` is sufficient given the small data volume and single-user constraint. IndexedDB would be needed if actions included binary blobs or if the dataset could grow into tens of thousands of records.
+
+### Aging thresholds
+
+| Range | Severity | Visual treatment |
+|---|---|---|
+| 0–90 days | `normal` | No badge |
+| 91–180 days | `warning` | Amber badge, subtle row tint |
+| > 180 days | `critical` | Red badge, strong row highlight |
+
+The 90-day threshold is **strictly greater than** (`> 90`), matching dealership industry convention where day 90 itself is not yet considered aged.
 
 ---
 
-## Assumptions & Design Decisions
+## 10. Testing Strategy
 
-1. **Single dealership scope** — Dashboard shows one dealership's inventory at a time.
-2. **Aging threshold fixed at 90 days** — Configurable via constant, not UI setting.
-3. **Actions are client-local** — No multi-user sync; each browser has its own action history.
-4. **Mock data is static** — 150 vehicles generated with realistic distribution (~30% aging).
-5. **No authentication** — Assumed internal tool behind dealership VPN/SSO in production.
-6. **25 vehicles per page** — Balances information density with scroll fatigue.
-7. **Manager name hardcoded** — "Manager" used for actions; in production, from auth session.
+| Layer | Tool | Scope |
+|---|---|---|
+| Unit | Vitest | `utils/` — pure functions; no React |
+| Store | Vitest | Zustand store actions and selectors |
+| Service | Vitest + MSW Node | `vehicleService`, `actionService` |
+| Component | Vitest + React Testing Library | All feature components |
+| Integration | React Testing Library | Filter → table interaction, action submission |
 
----
+**MSW in tests**: `src/test/setup.ts` starts the MSW Node server before each test file and resets handlers after each test, preventing handler pollution across test suites.
 
-## Backend Server Proposal
-
-This section describes the proposed production backend to replace the current MSW mock layer.
-
-### Technology Stack
-
-| Layer | Choice | Justification |
-|-------|--------|---------------|
-| **Runtime** | Node.js 20 LTS | Same language as frontend, non-blocking I/O, LTS support until 2026 |
-| **Framework** | Express 5 | Mature, minimal overhead, async/await error handling built-in |
-| **Database** | PostgreSQL 16 | ACID compliance, JSON support, full-text search, proven at scale |
-| **ORM** | Drizzle ORM | Type-safe queries, zero runtime overhead, push-based migrations |
-| **Validation** | Zod | Runtime schema validation shared with frontend types |
-| **Auth** | JWT (RS256) + refresh tokens | Stateless auth, easy to integrate with dealership SSO/OIDC |
-| **Logging** | Pino | JSON structured logs, <1ms overhead, ELK/Datadog compatible |
-| **Caching** | Redis 7 | KPI pre-computation cache, session store, rate limiting |
-
-### Database Schema
-
-```sql
--- Core tables
-CREATE TABLE dealerships (
-  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name        VARCHAR(255) NOT NULL,
-  address     TEXT,
-  created_at  TIMESTAMPTZ DEFAULT now()
-);
-
-CREATE TABLE vehicles (
-  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  dealership_id   UUID NOT NULL REFERENCES dealerships(id),
-  vin             VARCHAR(17) UNIQUE NOT NULL,
-  make            VARCHAR(100) NOT NULL,
-  model           VARCHAR(100) NOT NULL,
-  trim            VARCHAR(100),
-  year            INT NOT NULL,
-  price           NUMERIC(12,2) NOT NULL,
-  mileage         INT DEFAULT 0,
-  exterior_color  VARCHAR(50),
-  interior_color  VARCHAR(50),
-  status          VARCHAR(20) NOT NULL DEFAULT 'available',
-  acquired_date   DATE NOT NULL,
-  location        VARCHAR(255) NOT NULL,
-  image_url       TEXT,
-  created_at      TIMESTAMPTZ DEFAULT now(),
-  updated_at      TIMESTAMPTZ DEFAULT now()
-);
-
-CREATE TABLE managers (
-  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  dealership_id   UUID NOT NULL REFERENCES dealerships(id),
-  email           VARCHAR(255) UNIQUE NOT NULL,
-  name            VARCHAR(255) NOT NULL,
-  password_hash   TEXT NOT NULL,
-  role            VARCHAR(50) DEFAULT 'manager',
-  created_at      TIMESTAMPTZ DEFAULT now()
-);
-
-CREATE TABLE actions (
-  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  vehicle_id  UUID NOT NULL REFERENCES vehicles(id),
-  manager_id  UUID NOT NULL REFERENCES managers(id),
-  type        VARCHAR(50) NOT NULL,
-  notes       TEXT,
-  created_at  TIMESTAMPTZ DEFAULT now()
-);
-
-CREATE TABLE locations (
-  id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  dealership_id   UUID NOT NULL REFERENCES dealerships(id),
-  name            VARCHAR(255) NOT NULL,
-  address         TEXT
-);
-
-CREATE TABLE refresh_tokens (
-  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  manager_id  UUID NOT NULL REFERENCES managers(id),
-  token_hash  TEXT NOT NULL,
-  expires_at  TIMESTAMPTZ NOT NULL,
-  created_at  TIMESTAMPTZ DEFAULT now()
-);
-
--- Indexes for common queries
-CREATE INDEX idx_vehicles_dealership ON vehicles(dealership_id);
-CREATE INDEX idx_vehicles_status ON vehicles(status);
-CREATE INDEX idx_vehicles_acquired ON vehicles(acquired_date);
-CREATE INDEX idx_vehicles_search ON vehicles USING gin(to_tsvector('english', make || ' ' || model || ' ' || vin));
-CREATE INDEX idx_actions_vehicle ON actions(vehicle_id);
-CREATE INDEX idx_actions_manager ON actions(manager_id);
-```
-
-### API Endpoints
-
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| POST | `/api/auth/login` | Email/password → JWT + refresh token | Public |
-| POST | `/api/auth/refresh` | Rotate refresh token | Public |
-| GET | `/api/vehicles` | Paginated, filterable vehicle list | Manager |
-| GET | `/api/vehicles/:id` | Single vehicle detail with action history | Manager |
-| GET | `/api/locations` | Dealership locations list | Manager |
-| GET | `/api/kpis` | Pre-computed dashboard metrics (cached) | Manager |
-| POST | `/api/vehicles/:id/actions` | Record an action for a vehicle | Manager |
-| GET | `/api/vehicles/:id/actions` | Action history for a vehicle | Manager |
-
-#### Query Parameters for `GET /api/vehicles`
-
-```
-?page=1&limit=25&sort=daysInStock&order=desc
-&search=Toyota
-&location=Downtown
-&agingOnly=true
-&status=available
-```
-
-### Server Architecture
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                         Express 5 Server                             │
-│                                                                     │
-│  ┌────────────┐  ┌────────────┐  ┌──────────┐  ┌──────────────┐  │
-│  │ Auth       │  │ Validation │  │ Rate     │  │ Error        │  │
-│  │ Middleware │──▶│ Middleware │──▶│ Limiter  │──▶│ Handler      │  │
-│  └────────────┘  └────────────┘  └──────────┘  └──────────────┘  │
-│        │                                                            │
-│        ▼                                                            │
-│  ┌────────────────────────────────────────────────────────────────┐│
-│  │                      Route Handlers                             ││
-│  │  /api/auth/*    /api/vehicles/*    /api/locations    /api/kpis  ││
-│  └────────────────────────────────────────────────────────────────┘│
-│        │                                                            │
-│        ▼                                                            │
-│  ┌─────────────┐  ┌──────────────┐  ┌──────────────────────────┐ │
-│  │ Service     │  │ Drizzle ORM  │  │ Redis Cache              │ │
-│  │ Layer       │──▶│ (Type-safe)  │──▶│ (KPIs, sessions)        │ │
-│  └─────────────┘  └──────────────┘  └──────────────────────────┘ │
-│                          │                                          │
-│                          ▼                                          │
-│                    ┌──────────────┐                                 │
-│                    │ PostgreSQL 16│                                 │
-│                    └──────────────┘                                 │
-└─────────────────────────────────────────────────────────────────────┘
-```
-
-### Migration Strategy (MSW → Real Backend)
-
-1. **Phase 1 — Parallel running:** Deploy backend; keep MSW as fallback via feature flag
-2. **Phase 2 — Service layer swap:** Point `vehicleService.ts` to real endpoints (environment variable `VITE_API_URL`)
-3. **Phase 3 — Auth integration:** Add login page, JWT interceptor in fetch wrapper, token refresh logic
-4. **Phase 4 — Remove MSW:** Delete mock handlers/data from production bundle (keep for tests)
-
-Frontend changes required:
-- Add `VITE_API_URL` environment variable to service layer base URL
-- Add auth context/store for JWT token management
-- Add `Authorization: Bearer <token>` header to fetch requests
-- Replace localStorage actions with `POST /api/vehicles/:id/actions`
-
-### Deployment Architecture (Proposed)
-
-```
-                    ┌───────────────┐
-                    │  CloudFlare   │
-                    │  CDN / WAF    │
-                    └───────┬───────┘
-                            │
-              ┌─────────────┼─────────────┐
-              │             │             │
-        ┌─────▼─────┐ ┌────▼────┐ ┌─────▼─────┐
-        │  Static   │ │   API   │ │   API     │
-        │  Assets   │ │ Server 1│ │ Server 2  │
-        │  (S3/CDN) │ └────┬────┘ └─────┬─────┘
-        └───────────┘      │             │
-                           └──────┬──────┘
-                                  │
-                    ┌─────────────┼─────────────┐
-                    │             │             │
-              ┌─────▼─────┐ ┌────▼────┐       │
-              │ PostgreSQL│ │  Redis  │       │
-              │  Primary  │ │ Cluster │       │
-              └─────┬─────┘ └─────────┘       │
-                    │                          │
-              ┌─────▼─────┐                   │
-              │ PostgreSQL│                   │
-              │  Replica  │                   │
-              └───────────┘                   │
-```
-
-### Key Non-Functional Requirements
-
-| Requirement | Target | Approach |
-|-------------|--------|----------|
-| **Latency** | p95 < 200ms | Redis caching for KPIs, DB indexes, connection pooling |
-| **Throughput** | 1000 req/s per instance | Stateless servers, horizontal scaling |
-| **Availability** | 99.9% | Multi-AZ deployment, health checks, auto-restart |
-| **Data Integrity** | Zero loss | PostgreSQL WAL replication, daily backups |
-| **Security** | OWASP Top 10 | Input validation (Zod), parameterized queries, rate limiting, CORS |
+**No E2E tests** are included; the component + integration coverage at the React Testing Library level is sufficient for a frontend-only assessment scope. Playwright/Cypress would be the natural next step for a production project.
