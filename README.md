@@ -2,8 +2,6 @@
 
 A frontend-only **Intelligent Inventory Dashboard** for dealership managers — providing real-time vehicle stock visibility, aging stock identification, and a manager action workflow, all driven by a mocked backend.
 
-> Built as **Scenario B** of the Keyloop Technical Assessment.
-
 ---
 
 ## Features
@@ -11,10 +9,7 @@ A frontend-only **Intelligent Inventory Dashboard** for dealership managers — 
 - **Inventory table** — sortable, paginated, searchable across make, model, and VIN
 - **Aging stock detection** — vehicles held longer than 90 days are flagged with severity badges and row highlights
 - **Manager actions** — log price reductions, branch transfers, marketing pushes, and more against any vehicle; history persists across page refreshes
-- **KPI cards** — total stock, aging count, average days in stock, and total inventory value
-- **Age distribution chart** — visualise stock spread across 0–30 / 31–60 / 61–90 / 90+ day buckets
-- **Filtering** — by location, make, age range, and an "aging only" toggle
-- **Error & empty states** — friendly recovery UI for failed fetches and empty filter results
+- **Inventory dashboard** — total stock, aging count, average days in stock, and total inventory value
 
 ---
 
@@ -25,7 +20,6 @@ A frontend-only **Intelligent Inventory Dashboard** for dealership managers — 
 | Framework | React 18 + TypeScript |
 | Build | Vite 6 |
 | Styling | Tailwind CSS 4 |
-| UI Primitives | Radix UI / shadcn-style components |
 | Charts | Recharts |
 | State | Zustand 5 |
 | API Mocking | MSW 2 (Mock Service Worker) |
@@ -44,35 +38,13 @@ A frontend-only **Intelligent Inventory Dashboard** for dealership managers — 
 ### Install & Run
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/DongKat/smart-inventory-dashboard.git
 cd smart-inventory-dashboard
 npm install
 npm run dev
 ```
 
 Open [http://localhost:5173](http://localhost:5173).
-
-### Production Build
-
-```bash
-npm run build
-npm run preview
-```
-
----
-
-## Scripts
-
-| Command | Description |
-|---|---|
-| `npm run dev` | Start dev server with HMR |
-| `npm run build` | Type-check and bundle for production |
-| `npm run preview` | Serve the production build locally |
-| `npm run test` | Run tests in watch mode |
-| `npm run test:ci` | Run tests once and generate coverage report |
-| `npm run typecheck` | Strict TypeScript check (no emit) |
-| `npm run lint` | ESLint across the project |
-| `npm run format` | Prettier format all files |
 
 ---
 
@@ -142,7 +114,7 @@ src/
 ---
 
 ## Architecture Overview
-
+```
 See [docs/system-design.md](docs/system-design.md) for the full system design, data model, state management strategy, and key technical decisions.
 ├── hooks/               # Custom hooks
 │   └── usePagination.ts # Pagination logic
@@ -158,35 +130,3 @@ See [docs/system-design.md](docs/system-design.md) for the full system design, d
 ├── App.tsx              # Root application component
 └── main.tsx             # Entry point with MSW initialization
 ```
-
----
-
-## Technology Stack
-
-| Technology | Purpose |
-|------------|---------|
-| React 18 | UI library (functional components, hooks) |
-| TypeScript 5 (strict) | Type safety with `noUncheckedIndexedAccess` |
-| Vite 5 | Build tool and dev server |
-| Tailwind CSS v4 | Utility-first styling |
-| shadcn/ui + Radix UI | Accessible component primitives |
-| Zustand 5 | Lightweight state management |
-| Recharts 3 | Data visualization (bar charts) |
-| MSW 2 | Mock Service Worker for API simulation |
-| Vitest | Unit and component testing |
-| React Testing Library | Component testing with user-centric queries |
-| ESLint + Prettier | Code quality and formatting |
-
----
-
-## Features
-
-1. **Inventory Visualization** — Filterable, sortable, paginated table of 150 vehicles searchable by make, model, VIN, or year with location filtering.
-
-2. **Aging Stock Identification** — Vehicles >90 days automatically flagged with severity badges (Warning: 91–180 days, Critical: 180+ days), amber row highlighting, and a one-click "Aging Only" filter toggle.
-
-3. **Actionable Insights** — Managers can record actions (Price Reduction, Transfer, Marketing Push, Other) for aging vehicles via a dialog with notes. Actions persist across sessions via localStorage. Last action indicator shown on table rows.
-
-4. **Summary Metrics** — Four KPI cards (total vehicles, aging count, average days in stock, total inventory value) that update reactively with filters.
-
-5. **Age Distribution Chart** — Color-coded bar chart showing vehicle count across age buckets (0–30, 31–60, 61–90, 90+ days).
