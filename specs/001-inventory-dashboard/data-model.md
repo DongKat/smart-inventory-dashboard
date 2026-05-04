@@ -48,14 +48,14 @@ Represents a manager decision or proposed action recorded against a vehicle.
 | id | string (UUID) | Unique identifier | Required, immutable |
 | vehicleId | string | Reference to Vehicle.id | Required, must exist |
 | type | enum | Action category | Required: "price_reduction" | "transfer" | "marketing_push" | "other" |
-| notes | string | Free-text description | Required, 1–500 characters |
+| notes | string | Free-text description | Optional, 0–500 characters |
 | createdAt | string (ISO 8601) | Timestamp of action creation | Required, auto-generated |
 | managerName | string | Name of recording manager | Optional (default: "Manager") |
 
 **Validation rules**:
 - `vehicleId` must reference an existing vehicle.
 - `type` must be one of the defined enum values.
-- `notes` must be non-empty and ≤ 500 characters.
+- `notes` is optional; when provided, must be ≤ 500 characters.
 - `createdAt` is auto-set at creation time, never user-edited.
 
 ---
@@ -134,25 +134,23 @@ available ──→ reserved ──→ sold
 |--------|--------|-------------|
 | Vehicle | MSW mock handler (`GET /api/vehicles`) | In-memory (re-fetched on load) |
 | Location | Embedded in vehicle data + static list | In-memory |
-| Action | User-created via UI | localStorage via Zustand persist |
+| Action | User-created via UI | localStorage via actionService (guarded read/write wrapper) |
 
 **localStorage schema**:
 ```json
 {
   "smart-inventory-actions": {
     "version": 1,
-    "state": {
-      "actions": [
-        {
-          "id": "uuid",
-          "vehicleId": "uuid",
-          "type": "price_reduction",
-          "notes": "Reduce by $2,000",
-          "createdAt": "2026-04-15T10:30:00Z",
-          "managerName": "Manager"
-        }
-      ]
-    }
+    "actions": [
+      {
+        "id": "uuid",
+        "vehicleId": "uuid",
+        "type": "price_reduction",
+        "notes": "Reduce by $2,000",
+        "createdAt": "2026-04-15T10:30:00Z",
+        "managerName": "Manager"
+      }
+    ]
   }
 }
 ```

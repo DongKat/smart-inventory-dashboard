@@ -10,7 +10,7 @@ Build a single-page React + TypeScript dashboard for dealership managers providi
 ## Technical Context
 
 **Language/Version**: TypeScript 5.x (strict mode) on Node.js 20+  
-**Primary Dependencies**: React 18, Vite 5, Tailwind CSS 3, shadcn/ui, Zustand 4, Recharts 2, MSW 2  
+**Primary Dependencies**: React 18, Vite 5, Tailwind CSS v4, shadcn/ui, Zustand 5, Recharts 3, MSW 2  
 **Storage**: localStorage (action logs persistence); no database  
 **Testing**: Vitest + React Testing Library + MSW (test mocks)  
 **Target Platform**: Modern desktop browsers (Chrome, Firefox, Edge latest) at 1280px+ viewports  

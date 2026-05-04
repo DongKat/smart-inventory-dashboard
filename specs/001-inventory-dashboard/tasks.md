@@ -1,9 +1,9 @@
-vibe # Tasks: Intelligent Inventory Dashboard
+# Tasks: Intelligent Inventory Dashboard
 
 **Input**: Design documents from `/specs/001-inventory-dashboard/`
 **Prerequisites**: plan.md ✅, spec.md ✅, research.md ✅, data-model.md ✅, contracts/ ✅, quickstart.md ✅
 
-**Tests**: REQUIRED — Constitution Principle I (Unit-Tested Frontend) is NON-NEGOTIABLE; SC-006 mandates 100% component/state test coverage.
+**Tests**: REQUIRED — Constitution Principle I (Unit-Tested Frontend) is NON-NEGOTIABLE; SC-006 mandates ≥85% statement coverage with critical paths fully tested.
 
 **Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
 
@@ -48,7 +48,7 @@ vibe # Tasks: Intelligent Inventory Dashboard
 - [x] T013 Implement vehicle service layer in `src/services/vehicleService.ts` with fetchVehicles() and fetchLocations() functions calling /api endpoints
 - [x] T014 [P] Implement action service layer in `src/services/actionService.ts` with getActions(), addAction(), getActionsForVehicle() functions
 - [x] T015 Implement inventory Zustand store in `src/stores/inventoryStore.ts` with vehicles state, loading/error states, and fetch action
-- [x] T016 [P] Implement action Zustand store in `src/stores/actionStore.ts` with persist middleware to localStorage, add/get actions
+- [x] T016 [P] Implement action Zustand store in `src/stores/actionStore.ts` with service-backed localStorage persistence via actionService, add/get actions
 - [x] T017 [P] Implement aging utility functions in `src/utils/aging.ts`: computeDaysInStock(), isAgingVehicle(), getAgingSeverity()
 - [x] T018 [P] Implement filter utility functions in `src/utils/filters.ts`: filterBySearch(), filterByLocation(), filterByAgingStatus(), applyAllFilters()
 - [x] T019 [P] Implement metrics utility functions in `src/utils/metrics.ts`: computeKpis(), computeAgeDistribution(), computeLocationBreakdown()

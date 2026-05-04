@@ -26,7 +26,7 @@
 
 ## 2. Tailwind CSS + shadcn/ui Design System
 
-**Decision**: Tailwind CSS 3 for utility-first styling; shadcn/ui as the component library.
+**Decision**: Tailwind CSS v44 for utility-first styling; shadcn/ui as the component library.
 
 **Rationale**: Tailwind eliminates CSS naming conflicts and enables rapid UI iteration. shadcn/ui provides accessible, composable primitives (Dialog, Drawer, Table, Badge, Card) that are copy-pasted into the project—not installed as a dependency—giving full control over styling and behavior.
 
@@ -45,7 +45,7 @@
 
 ## 3. State Management with Zustand
 
-**Decision**: Zustand 4 with separate store slices per domain (inventory, actions, filters).
+**Decision**: Zustand 5 with separate store slices per domain (inventory, action
 
 **Rationale**: Zustand is lightweight (~1KB), requires no providers/context wrappers, supports TypeScript natively, and enables fine-grained subscriptions to prevent unnecessary re-renders. Store slices keep concerns separated while sharing a single store instance.
 
@@ -84,7 +84,7 @@
 
 ## 5. Recharts for Data Visualization
 
-**Decision**: Recharts 2 for KPI charts (bar chart for age distribution, optional pie for location).
+**Decision**: Recharts 3 for KPI charts (bar chart for age distribu
 
 **Rationale**: Recharts is React-native (uses React components, not DOM manipulation), supports responsive containers, and handles the chart types needed (Bar, Pie, Tooltip, Legend) with minimal configuration. It integrates naturally with React state and is well-typed.
 
@@ -143,12 +143,12 @@
 
 ## 8. localStorage Persistence Pattern
 
-**Decision**: Use Zustand `persist` middleware to automatically sync the action store to localStorage.
+**Decision**: Use a dedicated `actionService.ts` with try/catch-guarded read/write functions to sync actions to localStorage, accessed by the Zustand `actionStore`.
 
-**Rationale**: Zustand persist handles serialization, hydration, and versioning automatically. Actions are the only user-generated data that must survive refresh; vehicle data is re-fetched from mocks on load.
+**Rationale**: A service-backed approach provides explicit error handling for write failures (QuotaExceededError, private browsing), avoids coupling the store to a middleware, and gives full control over the serialization format. Actions are the only user-generated data that must survive refresh; vehicle data is re-fetched from mocks on load.
 
 **Alternatives considered**:
-- Manual localStorage read/write in service layer: More code, more bugs, no hydration handling.
+- Zustand `persist` middleware: Simpler setup but hides error handling; write failures crash silently.
 - IndexedDB: Overkill for simple JSON action logs.
 - Session storage: Lost on tab close; doesn't meet persistence requirement.
 
@@ -169,7 +169,7 @@
 | Styling | Tailwind CSS + shadcn/ui | Rapid iteration, accessible primitives |
 | State | Zustand (sliced stores) | Lightweight, fine-grained subscriptions |
 | API mocking | MSW 2 | Transparent to app code, reusable in tests |
-| Charts | Recharts 2 | React-native, responsive, well-typed |
+| Charts | Recharts 3 | React-native, responsive, well-typed |
 | Testing | Vitest + RTL + MSW | Fast, behavior-focused, Vite-native |
 | Pagination | Client-side, 25/page | Simple for demo, meets perf threshold |
-| Persistence | Zustand persist → localStorage | Automatic sync, versioned hydration |
+| Persistence | actionService → localStorage | Explicit error handling, versioned schema |
